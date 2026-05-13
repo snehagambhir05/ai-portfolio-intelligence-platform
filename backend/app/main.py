@@ -4,7 +4,6 @@ from fastapi.middleware.cors import CORSMiddleware
 import yfinance as yf
 import pandas as pd
 import numpy as np
-#from app.ml.lstm_model import train_lstm
 
 app = FastAPI(
     title="AI Portfolio Intelligence API",
@@ -31,6 +30,11 @@ def get_stock(ticker: str):
     stock = yf.Ticker(ticker)
 
     hist = stock.history(period="6mo")
+
+    if hist.empty:
+        return {
+            "error": "Invalid stock ticker"
+        }
 
     hist["Returns"] = hist["Close"].pct_change()
 
@@ -59,21 +63,21 @@ def get_stock(ticker: str):
             prices.append(next_price)
 
         simulations.append(prices)
-            # Mock AI Forecast
 
-lstm_predictions = [
+    # Mock AI Forecast
+    lstm_predictions = [
 
-    round(last_price * 1.01, 2),
+        round(last_price * 1.01, 2),
 
-    round(last_price * 1.02, 2),
+        round(last_price * 1.02, 2),
 
-    round(last_price * 1.03, 2),
+        round(last_price * 1.03, 2),
 
-    round(last_price * 1.04, 2),
+        round(last_price * 1.04, 2),
 
-    round(last_price * 1.05, 2)
+        round(last_price * 1.05, 2)
 
-]
+    ]
 
     return {
 
@@ -91,5 +95,6 @@ lstm_predictions = [
 
         "simulations": simulations,
 
-"lstm_predictions": lstm_predictions
+        "lstm_predictions": lstm_predictions
+
     }
