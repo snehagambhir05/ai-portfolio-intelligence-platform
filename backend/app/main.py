@@ -27,9 +27,38 @@ def home():
 @app.get("/stock/{ticker}")
 def get_stock(ticker: str):
 
+    try:
+
     stock = yf.Ticker(ticker)
 
     hist = stock.history(period="6mo")
+
+    if hist.empty:
+        raise Exception("No stock data found")
+
+except Exception as e:
+
+    return {
+
+        "ticker": ticker,
+
+        "dates": [],
+
+        "closing_prices": [],
+
+        "avg_return": 0,
+
+        "volatility": 0,
+
+        "sharpe_ratio": 0,
+
+        "simulations": [],
+
+        "lstm_predictions": [],
+
+        "error": str(e)
+
+    }
 
     if hist.empty:
         return {
