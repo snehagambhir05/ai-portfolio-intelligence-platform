@@ -31,7 +31,7 @@ def get_stock(ticker: str):
 
     stock = yf.Ticker(ticker)
 
-    hist = stock.history(period="6mo")
+    hist = stock.history(period="1mo")
 
     if hist.empty:
         raise Exception("No stock data found")
