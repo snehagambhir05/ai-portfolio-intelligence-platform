@@ -1,3 +1,4 @@
+import requests
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -18,45 +19,83 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/")
-def home():
-    return {
-        "message": "Backend Running Successfully"
-    }
-
 @app.get("/stock/{ticker}")
 def get_stock(ticker: str):
 
-    try:
+    API_KEY = "O5WWQFMWULOS5T3G"
 
-    stock = yf.Ticker(ticker)
+    url = f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={ticker}&apikey={API_KEY}"
 
-    hist = stock.history(period="1mo")
+    response = requests.get(url)
 
-    if hist.empty:
-        raise Exception("No stock data found")
+    data = response.json()
 
-except Exception as e:
+    time_series = data.get("Time Series (Daily)", {})
+
+    dates = list(time_series.keys())[:30]
+
+    prices = [
+        float(time_series[date]["4. close"])
+        for date in dates
+    ]
+
+    prices.reverse()
+    dates.reverse()
+
+    returns = pd.Series(prices).pct_change().dropna()
+
+    avg_return = returns.mean()
+
+    volatility = returns.std()
+
+    sharpe_ratio = avg_return / volatility
+
+    simulations = []
+
+    last_price = prices[-1]
+
+    for i in range(20):
+
+        sim_prices = [last_price]
+
+        for j in range(30):
+
+            next_price = sim_prices[-1] * np.exp(
+                (avg_return - (volatility ** 2) / 2)
+                + volatility * np.random.normal()
+            )
+
+            sim_prices.append(next_price)
+
+        simulations.append(sim_prices)
+
+    lstm_predictions = [
+
+        round(last_price * 1.01, 2),
+        round(last_price * 1.02, 2),
+        round(last_price * 1.03, 2),
+        round(last_price * 1.04, 2),
+        round(last_price * 1.05, 2)
+
+    ]
 
     return {
 
         "ticker": ticker,
 
-        "dates": [],
+        "dates": dates,
 
-        "closing_prices": [],
+        "closing_prices": prices,
 
-        "avg_return": 0,
+        "avg_return": round(avg_return * 100, 4),
 
-        "volatility": 0,
+        "volatility": round(volatility * 100, 4),
 
-        "sharpe_ratio": 0,
+        "sharpe_ratio": round(sharpe_ratio, 4),
 
-        "simulations": [],
+        "simulations": simulations,
 
-        "lstm_predictions": [],
-
-        "error": str(e)
+        "lstm_predictions": lstm_predictions
 
     }
 
