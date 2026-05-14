@@ -26,22 +26,55 @@ function App() {
   }, []);
 
   const fetchStock = async () => {
-    if (!ticker) return;
 
-    try {
-      setLoading(true);
+  if (!ticker.trim()) return;
 
-      const response = await API.get(`/stock/${ticker}`);
+  try {
+
+    setLoading(true);
+
+    const response = await API.get(`/stock/${ticker}`);
+
+    if (response.data.error) {
+
+      setStock({
+        ticker: ticker,
+        avg_return: 0,
+        volatility: 0,
+        sharpe_ratio: 0,
+        dates: [],
+        closing_prices: [],
+        simulations: [[]],
+        lstm_predictions: []
+      });
+
+    } else {
 
       setStock(response.data);
-      setLoading(false);
-
-    } catch (error) {
-
-      console.error(error);
 
     }
-  };
+
+  } catch (error) {
+
+    console.error(error);
+
+    setStock({
+      ticker: ticker,
+      avg_return: 0,
+      volatility: 0,
+      sharpe_ratio: 0,
+      dates: [],
+      closing_prices: [],
+      simulations: [[]],
+      lstm_predictions: []
+    });
+
+  } finally {
+
+    setLoading(false);
+
+  }
+};
 
   const chartData = stock
     ? stock.dates.map((date, index) => ({
@@ -203,7 +236,7 @@ const generateInsight = () => {
 
                   <LineChart
                     data={
-                      stock.simulations[0].map((_, index) => {
+                      stock.simulations?.[0]?.map((_, index) => {
 
                         const point = { day: index };
 
@@ -224,7 +257,7 @@ const generateInsight = () => {
 
                     <Tooltip />
 
-                    {stock.simulations.map((_, index) => (
+                    {stock.simulations?.map((_, index) => (
 
                       <Line
                         key={index}
